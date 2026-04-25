@@ -1,0 +1,42 @@
+module "vpc" {
+  source   = "./modules/vpc"
+  vpc_cidr = "10.0.0.0/16"
+  vpc_name = "my-vpc"
+}
+
+module "subnet" {
+  source      = "./modules/subnet"
+  vpc_id      = module.vpc.vpc_id
+  subnet_cidr = "10.0.1.0/24"
+  subnet_name = "public-subnet"
+}
+
+module "igw" {
+  source   = "./modules/igw"
+  vpc_id   = module.vpc.vpc_id
+  igw_name = "my-igw"
+}
+
+module "route_table" {
+  source    = "./modules/route_table"
+  vpc_id    = module.vpc.vpc_id
+  igw_id    = module.igw.igw_id
+  subnet_id = module.subnet.subnet_id
+  rt_name   = "public-rt"
+}
+
+module "sg" {
+  source  = "./modules/sg"
+  vpc_id  = module.vpc.vpc_id
+  sg_name = "web-sg"
+}
+
+module "ec2" {
+  source          = "./modules/ec2"
+  subnet_id       = module.subnet.subnet_id
+  security_groups = [module.sg.sg_id]
+  ami             = "ami-02dfbd4ff395f2a1b"   # update
+  instance_type   = "t3.micro"
+  key_name        = "terraform-key"
+  instance_name   = "my-ec2"
+}

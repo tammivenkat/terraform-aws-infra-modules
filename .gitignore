@@ -1,0 +1,10 @@
+
+*.txt
+
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+*.tfvars
+.terraform.lock.hcl

@@ -1,0 +1,144 @@
+
+# -------------------------------
+# 🔍 Get Latest Amazon Linux AMI
+# -------------------------------
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+# -------------------------------
+# 🌐 VPC
+# -------------------------------
+module "vpc" {
+  source   = "./modules/vpc"
+  vpc_cidr = "10.0.0.0/16"
+  vpc_name = "my-vpc"
+}
+
+# -------------------------------
+# 🌍 Subnet
+# -------------------------------
+module "subnet1" {
+  source      = "./modules/subnet"
+  vpc_id      = module.vpc.vpc_id
+  subnet_cidr = "10.0.1.0/24"
+  subnet_name = "public-subnet-1"
+  availability_zone = "us-east-1a"
+}
+
+module "subnet2" {
+  source      = "./modules/subnet"
+  vpc_id      = module.vpc.vpc_id
+  subnet_cidr = "10.0.2.0/24"
+  subnet_name = "public-subnet-2"
+  availability_zone = "us-east-1b"
+}
+
+#module "subnet" {
+#  source      = "./modules/subnet"
+#  vpc_id      = module.vpc.vpc_id
+#  subnet_cidr = "10.0.1.0/24"
+#  subnet_name = "public-subnet"
+#}
+
+# -------------------------------
+# 🌐 Internet Gateway
+# -------------------------------
+module "igw" {
+  source   = "./modules/igw"
+  vpc_id   = module.vpc.vpc_id
+  igw_name = "my-igw"
+}
+
+# -------------------------------
+# 🛣️ Route Table
+# -------------------------------
+module "route_table" {
+  source = "./modules/route_table"
+
+  vpc_id = module.vpc.vpc_id
+  igw_id = module.igw.igw_id
+  rt_name = "public-rt"
+
+  subnet_ids = [
+    module.subnet1.subnet_id,
+    module.subnet2.subnet_id
+  ]
+}
+
+# -------------------------------
+# 🔐 Security Group
+# -------------------------------
+module "sg" {
+  source  = "./modules/sg"
+  vpc_id  = module.vpc.vpc_id
+  sg_name = "web-sg"
+}
+
+# -------------------------------
+# 💻 EC2 Instance
+# -------------------------------
+#module "ec2" {
+#  source          = "./modules/ec2"
+#  subnet_id       = module.subnet.subnet_id
+#  security_groups = [module.sg.sg_id]
+
+#  ami             = data.aws_ami.amazon_linux.id
+#  instance_type   = "t3.micro"
+#  key_name        = "terraform-key"
+#  instance_name   = "my-ec2"
+#}
+
+# --------------------------------
+#  Launch Template
+#---------------------------------
+module "launch_template" {
+  source          = "./modules/launch_template"
+  ami             = data.aws_ami.amazon_linux.id
+  instance_type   = "t3.micro"
+  key_name        = "terraform-key"
+  security_groups = [module.sg.sg_id]
+}
+
+#--------------------------------------
+#   Tartget group
+#--------------------------------------
+module "target_group" {
+  source = "./modules/target_group"
+  vpc_id = module.vpc.vpc_id
+}
+
+#--------------------------------------
+#   Application Load Balance (ALB)
+#--------------------------------------
+module "alb" {
+  source           = "./modules/alb"
+  security_groups  = [module.sg.sg_id]
+  subnets = [
+  module.subnet1.subnet_id,
+  module.subnet2.subnet_id
+  ]
+  target_group_arn = module.target_group.target_group_arn
+}
+
+#---------------------------------------
+#   Auto Scaling Group
+#---------------------------------------
+module "asg" {
+  source             = "./modules/asg"
+  launch_template_id = module.launch_template.launch_template_id
+  launch_template_version = tostring(module.launch_template.latest_version)
+  subnets = [
+  module.subnet1.subnet_id,
+  module.subnet2.subnet_id
+  ]
+  target_group_arn   = module.target_group.target_group_arn
+}
+
+
