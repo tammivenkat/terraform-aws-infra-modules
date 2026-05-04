@@ -13,4 +13,13 @@ variable "subnet_name" {
   type        = string
 }
 
-variable "availability_zone" {}
+variable "availability_zone" {
+  description = "Subnet Availability Zone"
+  type        = string
+}
+
+variable "map_public_ip_on_launch" {
+  description = "Auto assign public IP"
+  type        = bool
+  default     = false
+}

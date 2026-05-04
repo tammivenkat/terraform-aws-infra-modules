@@ -24,20 +24,99 @@ module "vpc" {
 # -------------------------------
 # 🌍 Subnet
 # -------------------------------
+#
+#
+#
+# -------------------------------
+# 🌍 Public Subnets
+# -------------------------------
 module "subnet1" {
-  source      = "./modules/subnet"
-  vpc_id      = module.vpc.vpc_id
-  subnet_cidr = "10.0.1.0/24"
-  subnet_name = "public-subnet-1"
-  availability_zone = "us-east-1a"
+  source                  = "./modules/subnet"
+  vpc_id                  = module.vpc.vpc_id
+  subnet_cidr             = "10.0.1.0/24"
+  subnet_name             = "public-subnet-1"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true
 }
 
 module "subnet2" {
-  source      = "./modules/subnet"
-  vpc_id      = module.vpc.vpc_id
-  subnet_cidr = "10.0.2.0/24"
-  subnet_name = "public-subnet-2"
-  availability_zone = "us-east-1b"
+  source                  = "./modules/subnet"
+  vpc_id                  = module.vpc.vpc_id
+  subnet_cidr             = "10.0.2.0/24"
+  subnet_name             = "public-subnet-2"
+  availability_zone       = "us-east-1b"
+  map_public_ip_on_launch = true
+}
+
+#-------------------------------
+# NAT Gateway Module
+#-------------------------------
+
+module "nat_gateway" {
+  source    = "./modules/nat_gateway"
+  subnet_id = module.subnet1.subnet_id # public subnet
+  name      = "main-nat"
+}
+
+
+#----------------------------------
+# Private Route Table
+#----------------------------------
+
+module "private_route_table" {
+  source = "./modules/private_route_table"
+
+  vpc_id         = module.vpc.vpc_id
+  nat_gateway_id = module.nat_gateway.nat_gateway_id
+
+  subnet_ids = [
+    module.app_subnet1.subnet_id,
+    module.app_subnet2.subnet_id
+  ]
+
+  name = "app-private-rt"
+}
+
+# -------------------------------
+# 🔒 Private App Subnets
+# -------------------------------
+module "app_subnet1" {
+  source                  = "./modules/subnet"
+  vpc_id                  = module.vpc.vpc_id
+  subnet_cidr             = "10.0.11.0/24"
+  subnet_name             = "app-private-1"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = false
+}
+
+module "app_subnet2" {
+  source                  = "./modules/subnet"
+  vpc_id                  = module.vpc.vpc_id
+  subnet_cidr             = "10.0.12.0/24"
+  subnet_name             = "app-private-2"
+  availability_zone       = "us-east-1b"
+  map_public_ip_on_launch = false
+}
+
+# -------------------------------
+# 🗄️ Private DB Subnets
+# -------------------------------
+module "db_subnet1" {
+  source                  = "./modules/subnet"
+  vpc_id                  = module.vpc.vpc_id
+  subnet_cidr             = "10.0.21.0/24"
+  subnet_name             = "db-private-1"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = false
+}
+
+module "db_subnet2" {
+  source                  = "./modules/subnet"
+  vpc_id                  = module.vpc.vpc_id
+  subnet_cidr             = "10.0.22.0/24"
+  subnet_name             = "db-private-2"
+  availability_zone       = "us-east-1b"
+  map_public_ip_on_launch = false
 }
 
 #module "subnet" {
@@ -62,8 +141,8 @@ module "igw" {
 module "route_table" {
   source = "./modules/route_table"
 
-  vpc_id = module.vpc.vpc_id
-  igw_id = module.igw.igw_id
+  vpc_id  = module.vpc.vpc_id
+  igw_id  = module.igw.igw_id
   rt_name = "public-rt"
 
   subnet_ids = [
@@ -118,11 +197,11 @@ module "target_group" {
 #   Application Load Balance (ALB)
 #--------------------------------------
 module "alb" {
-  source           = "./modules/alb"
-  security_groups  = [module.sg.sg_id]
+  source          = "./modules/alb"
+  security_groups = [module.sg.sg_id]
   subnets = [
-  module.subnet1.subnet_id,
-  module.subnet2.subnet_id
+    module.subnet1.subnet_id,
+    module.subnet2.subnet_id
   ]
   target_group_arn = module.target_group.target_group_arn
 }
@@ -131,14 +210,14 @@ module "alb" {
 #   Auto Scaling Group
 #---------------------------------------
 module "asg" {
-  source             = "./modules/asg"
-  launch_template_id = module.launch_template.launch_template_id
+  source                  = "./modules/asg"
+  launch_template_id      = module.launch_template.launch_template_id
   launch_template_version = tostring(module.launch_template.latest_version)
   subnets = [
-  module.subnet1.subnet_id,
-  module.subnet2.subnet_id
+    module.app_subnet1.subnet_id,
+    module.app_subnet2.subnet_id
   ]
-  target_group_arn   = module.target_group.target_group_arn
+  target_group_arn = module.target_group.target_group_arn
 }
 
 

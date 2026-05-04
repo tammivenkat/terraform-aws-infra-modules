@@ -11,7 +11,7 @@ resource "aws_launch_template" "lt" {
 
   # 🔥 USER DATA (VERY IMPORTANT)
 
-user_data = base64encode(<<-EOF
+  user_data = base64encode(<<-EOF
 #!/bin/bash
 exec > /var/log/user-data.log 2>&1
 
@@ -23,7 +23,7 @@ systemctl start httpd
 
 echo "Hello from Amazone Linux OS Machine ASG - $(hostname -f)" > /var/www/html/index.html
 EOF
-)
+  )
 
 
   tag_specifications {
