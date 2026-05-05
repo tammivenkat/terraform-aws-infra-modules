@@ -220,4 +220,22 @@ module "asg" {
   target_group_arn = module.target_group.target_group_arn
 }
 
+# --------------------------------------
+#   RDS Module (DB Layer)
+# --------------------------------------
+module "rds" {
+  source = "./modules/rds"
 
+  db_name  = "mydb"
+  username = "admin"
+  password = "Admin1234!" # later move to secrets
+
+  vpc_id = module.vpc.vpc_id
+
+  subnet_ids = [
+    module.db_subnet1.subnet_id,
+    module.db_subnet2.subnet_id
+  ]
+
+  app_sg_id = module.sg.sg_id
+}
