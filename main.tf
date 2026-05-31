@@ -21,6 +21,13 @@ module "vpc" {
   vpc_name = "my-vpc"
 }
 
+#----------------------------------
+# @ IAM ROLE
+#----------------------------------
+module "iam" {
+  source = "./modules/iam"
+}
+
 # -------------------------------
 # 🌍 Subnet
 # -------------------------------
@@ -178,11 +185,12 @@ module "sg" {
 #  Launch Template
 #---------------------------------
 module "launch_template" {
-  source          = "./modules/launch_template"
-  ami             = data.aws_ami.amazon_linux.id
-  instance_type   = "t3.micro"
-  key_name        = "terraform-key"
-  security_groups = [module.sg.sg_id]
+  source                = "./modules/launch_template"
+  ami                   = data.aws_ami.amazon_linux.id
+  instance_type         = "t3.micro"
+  key_name              = "terraform-key"
+  security_groups       = [module.sg.sg_id]
+  instance_profile_name = module.iam.instance_profile_name
 }
 
 #--------------------------------------
@@ -238,4 +246,31 @@ module "rds" {
   ]
 
   app_sg_id = module.sg.sg_id
+}
+
+#-------------------------------------------
+
+module "sns" {
+  source = "./modules/sns"
+
+  topic_name    = "terraform-alerts"
+  email_address = "venkkatt@gmail.com"
+}
+
+module "cloudwatch" {
+
+  source = "./modules/cloudwatch"
+
+  target_group_arn_suffix  = module.target_group.target_group_arn_suffix
+  load_balancer_arn_suffix = module.alb.alb_arn_suffix
+
+  sns_topic_arn = module.sns.topic_arn
+}
+
+module "dashboard" {
+
+  source = "./modules/dashboard"
+
+  alb_arn_suffix          = module.alb.alb_arn_suffix
+  target_group_arn_suffix = module.target_group.target_group_arn_suffix
 }
