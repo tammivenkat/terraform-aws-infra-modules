@@ -9,3 +9,7 @@ variable "load_balancer_arn_suffix" {
 variable "sns_topic_arn" {
   type = string
 }
+
+variable "instance_id" {
+  type = string
+}

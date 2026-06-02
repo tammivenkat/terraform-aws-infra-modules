@@ -254,7 +254,7 @@ module "sns" {
   source = "./modules/sns"
 
   topic_name    = "terraform-alerts"
-  email_address = "venkkatt@gmail.com"
+  email_address = "lalitha.tammi@gmail.com"
 }
 
 module "cloudwatch" {
@@ -265,6 +265,7 @@ module "cloudwatch" {
   load_balancer_arn_suffix = module.alb.alb_arn_suffix
 
   sns_topic_arn = module.sns.topic_arn
+  instance_id   = "i-0c6eaf87a04f8be7a"
 }
 
 module "dashboard" {
