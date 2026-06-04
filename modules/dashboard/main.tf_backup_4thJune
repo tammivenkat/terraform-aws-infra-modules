@@ -68,9 +68,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           metrics = [
             [
               "AWS/EC2",
-              "CPUUtilization",
-              "InstanceId",
-              "i-0e92a55801fa263b2"
+              "CPUUtilization"
             ]
           ]
 
@@ -93,9 +91,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           metrics = [
             [
               "CWAgent",
-              "mem_used_percent",
-              "host",
-              "ip-10-0-12-115.ec2.internal"
+              "mem_used_percent"
             ]
           ]
 
@@ -118,15 +114,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           metrics = [
             [
               "CWAgent",
-              "disk_used_percent",
-              "host",
-              "ip-10-0-12-115.ec2.internal",
-              "path",
-              "/",
-              "device",
-              "nvme0n1p1",
-              "fstype",
-              "xfs"
+              "disk_used_percent"
             ]
           ]
 
@@ -135,7 +123,6 @@ resource "aws_cloudwatch_dashboard" "main" {
           region = "us-east-1"
         }
       }
-
     ]
   })
 }
