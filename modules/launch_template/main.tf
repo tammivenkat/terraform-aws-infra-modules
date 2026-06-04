@@ -41,6 +41,48 @@ yum install -y \
   mariadb105 \
   awscli
 
+  yum install -y amazon-cloudwatch-agent
+
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<CWCONFIG
+{
+  "agent": {
+    "metrics_collection_interval": 60
+  },
+  "metrics": {
+    "metrics_collected": {
+      "mem": {
+        "measurement": [
+          "mem_used_percent"
+        ]
+      },
+      "disk": {
+        "measurement": [
+          "disk_used_percent"
+        ],
+        "resources": [
+          "/"
+        ]
+      }
+    }
+  }
+}
+
+CWCONFIG
+
+
+
+systemctl enable amazon-cloudwatch-agent
+
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config \
+  -m ec2 \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+  -s
+
+
+
+
+
 # Start Apache
 systemctl enable httpd
 systemctl start httpd
