@@ -80,6 +80,8 @@ resource "aws_cloudwatch_dashboard" "main" {
         }
       },
 
+
+      /*
       {
         type   = "metric"
         x      = 12
@@ -135,7 +137,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           region = "us-east-1"
         }
       }
-
+*/
     ]
   })
 }
